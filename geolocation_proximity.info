@@ -1,0 +1,13 @@
+; Maurizio Pinotti 2001-05-03
+
+name = Geolocation Proximity Filter
+description = View proximity filter for Geolocation Field data
+package = Geolocation
+core = 7.x
+
+dependencies[] = geolocation
+dependencies[] = views
+
+files[] = geolocation_proximity_geolocation_distance_handler.inc
+files[] = earth.inc
+
