@@ -1,4 +1,8 @@
 <?php
+/**
+ * @file
+ * Definition of geolocation_proximity_views_handler_filter_distance.
+ */
 
 /**
  * General proximity filter for location latitude/longitude.
@@ -66,7 +70,7 @@ class geolocation_proximity_views_handler_filter_distance extends views_handler_
     );
     $form['value']['search_distance'] = array(
       '#type' => 'textfield',
-      '#title' => t('Max distance').' (km)',
+      '#title' => t('Max distance') . ' (km)',
       '#default_value' => $this->value['search_distance'],
       '#weight' => 3,
     );
@@ -93,20 +97,19 @@ class geolocation_proximity_views_handler_filter_distance extends views_handler_
     // and $this->value for exposed filter values.
     $options = array_merge($this->options, $this->options['value'], $this->value);
 
-  	$filter_lat = $options[0]['latitude'];
-  	$filter_lng = $options[0]['longitude'];
-  	$filter_distance = $options[0]['search_distance'];
-    if(!(is_numeric($filter_lat) && is_numeric($filter_lng) && is_numeric($filter_distance))){
-  		return;
+    $filter_lat = $options[0]['latitude'];
+    $filter_lng = $options[0]['longitude'];
+    $filter_distance = $options[0]['search_distance'];
+    if (!(is_numeric($filter_lat) && is_numeric($filter_lng) && is_numeric($filter_distance))) {
+      return;
     }
 
     $this->ensure_my_table();
 
-    /**
-     * Precalulate some values to speed up the query. 
-     *
-     * http://www.codecodex.com/wiki/Calculate_Distance_Between_Two_Points_on_a_Globe#MySQL     
-     *   
+     // Precalulate some values to speed up the query.
+     //
+     // http://www.codecodex.com/wiki/Calculate_Distance_Between_Two_Points_on_a_Globe#MySQL
+     //
      // acos(
      //   cos( radians(45.20327) ) 
      //   * cos( radians( coord_lat ) ) 
@@ -115,24 +118,22 @@ class geolocation_proximity_views_handler_filter_distance extends views_handler_
      //   sin( radians(45.20327) ) 
      //   * sin( radians(coord_lat) ) 
      // ) * 6371
-     *
-     */
     $filter_lat_cos_rad = cos(deg2rad($filter_lat));
     $filter_lat_sin_rad = sin(deg2rad($filter_lat));
     $filter_lng_rad = deg2rad($filter_lng);
-  
-    // Use precalculated values from Geolocation Field.
-  	$field_id = $options['field'];
-  	$field_id = str_replace('_distance', '', $field_id);
-    // SIN( radians(lat) )
-  	$field_lat_sin_rad = "$this->table_alias.$field_id" . '_lat_sin';
-    // COS( radians(lat) )
-  	$field_lat_cos_rad = "$this->table_alias.$field_id" . '_lat_cos';
-    // radians(lng)
-  	$field_lng_rad = "$this->table_alias.$field_id" . '_lng_rad';
 
-    // Begin proximity query
-  	$this->query->add_where_expression($this->options['group'], " 
+    // Use precalculated values from Geolocation Field.
+    $field_id = $options['field'];
+    $field_id = str_replace('_distance', '', $field_id);
+    // SIN( radians(lat) )
+    $field_lat_sin_rad = "$this->table_alias.$field_id" . '_lat_sin';
+    // COS( radians(lat) )
+    $field_lat_cos_rad = "$this->table_alias.$field_id" . '_lat_cos';
+    // radians(lng)
+    $field_lng_rad = "$this->table_alias.$field_id" . '_lng_rad';
+
+    // Begin proximity query.
+    $this->query->add_where_expression($this->options['group'], " 
       (
         6371 
         * ACOS( 
@@ -144,6 +145,6 @@ class geolocation_proximity_views_handler_filter_distance extends views_handler_
           * $field_lat_sin_rad 
         )
       ) < " . $filter_distance);
-    // End proximity query
+    // End proximity query.
   }
 }

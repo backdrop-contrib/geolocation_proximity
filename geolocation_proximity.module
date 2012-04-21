@@ -1,65 +1,51 @@
 <?php
+/**
+ * @file
+ * Views integration for geolocation module and proximity search calculations
+ */
 
 /**
  * Implements hook_views_api()
- *
- * Do we realy need this AT ALL? Do we need to define the API version? 
- * Since this module is all about views integration we don't need to 
- * seperate views stuff from module stuff.
- *
- * See:
- * http://api.drupal.org/api/views/views.api.php/function/hook_views_api/7
- *
- * This is required for your module to have its include files loaded; for example,
- * when implementing hook_views_default_views().
  */
 function geolocation_proximity_views_api() {
   return array(
     'api' => 3,
-    // 'path' => drupal_get_path('module', 'geolocation_proximity') . '/includes/views', 
-    // 'template path' => drupal_get_path('module', 'geolocation_proximity') . 'themes',
   );
 }
 
 /**
  * Implements hook_field_views_data_alter()
  */
-function geolocation_proximity_field_views_data_alter(&$result, $field, $module){
-	if($module == 'geolocation'){ 
-		$field_name = $field['field_name'];
-		$result['field_data_'.$field_name][$field['field_name'].'_distance'] = array(
-			'group' => 'Geolocation',
-			'title' => $field_name.' - distance',
-			'help' => 'Filter view results by distance, using geolocation data from <em>'.$field_name.'</em>.',
-			'title short' => $field_name.' - Distance',
-			'filter' => array(
-				'table' => 'field_data_'.$field_name,
-				'handler' => 'geolocation_proximity_views_handler_filter_distance',
-			),
-		);
-	}
+function geolocation_proximity_field_views_data_alter(&$result, $field, $module) {
+  if ($module == 'geolocation') {
+    $field_name = $field['field_name'];
+    $result['field_data_' . $field_name][$field['field_name'] . '_distance'] = array(
+      'group' => 'Geolocation',
+      'title' => $field_name . ' - distance',
+      'help' => 'Filter view results by distance, using geolocation data from <em>' . $field_name . '</em>.',
+      'title short' => $field_name . ' - Distance',
+      'filter' => array(
+        'table' => 'field_data_' . $field_name,
+        'handler' => 'geolocation_proximity_views_handler_filter_distance',
+      ),
+    );
+  }
 }
 
 /**
  * Implements hook_views_data()
- * 
- * API:
- * http://api.drupal.org/api/views/views.api.php/function/hook_views_data/7
- *
- * Mini Tutorial:
- * http://www.metaltoad.com/blog/drupal-7-tutorial-creating-custom-filters-views
  */
 function geolocation_proximity_views_data() {
-	$data = array();
+  $data = array();
   foreach (field_info_fields() as $field) {
-  	if($field['type'] != 'geolocation_latlng'){
-  		continue;
-  	}
-  	
-  	$field_name = 'field_data_'.$field['field_name'];
-  	$data[$field_name][$field['field_name']]['filter'] = array(
-  		'handler' => 'geolocation_proximity_views_handler_filter_distance',
-  	);
+    if ($field['type'] != 'geolocation_latlng') {
+      continue;
+    }
+
+    $field_name = 'field_data_' . $field['field_name'];
+    $data[$field_name][$field['field_name']]['filter'] = array(
+      'handler' => 'geolocation_proximity_views_handler_filter_distance',
+    );
   }
   return $data;
 }
