@@ -19,23 +19,32 @@ function geolocation_proximity_views_api() {
 function geolocation_proximity_field_views_data_alter(&$result, $field, $module) {
   if ($module == 'geolocation') {
     $field_name = $field['field_name'];
-    $result['field_data_' . $field_name][$field['field_name'] . '_distance'] = array(
-      'group' => 'Geolocation',
-      'title' => $field_name . ' - distance',
-      'help' => 'Filter view results by distance, using geolocation data from <em>' . $field_name . '</em>.',
-      'title short' => $field_name . ' - Distance',
-      'filter' => array(
-        'table' => 'field_data_' . $field_name,
-        'handler' => 'geolocation_proximity_views_handler_filter_distance',
-      ),
-    );
+    foreach ($result as &$r) {
+      $r[$field_name . '_distance'] = array(
+        'group' => 'Geolocation',
+        'title' => t('Distance'),
+        'help' => t('Filter view results by distance, using geolocation data from %field.', array('%field' => $field_name)),
+        'title short' => t('@field: distance', array('@field' => $field_name)),
+        'filter' => array(
+          'handler' => 'geolocation_proximity_views_handler_filter_distance',
+        ),
+        'field' => array(
+          'handler' => 'geolocation_proximity_views_handler_field_distance',
+          // This is use by the table display plugin.
+          'click sortable' => TRUE,
+        ),
+      );
+    }
   }
 }
 
 /**
- * Implements hook_views_data()
+ * Implements hook_views_data_alter()
  */
-function geolocation_proximity_views_data() {
+function geolocation_proximity_views_data_alter(&$data) {
+
+  return;
+
   $data = array();
   foreach (field_info_fields() as $field) {
     if ($field['type'] != 'geolocation_latlng') {

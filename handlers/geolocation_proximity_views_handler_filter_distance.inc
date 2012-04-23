@@ -8,49 +8,41 @@
  * General proximity filter for location latitude/longitude.
  */
 class geolocation_proximity_views_handler_filter_distance extends views_handler_filter {
+
+  /**
+   * init the handler with necessary data.
+   */
+  function init(&$view, &$options) {
+    parent::init($view, $options);
+    $this->field_alias = $this->options['id'] . '_filter';
+  }
+
+  /**
+   * views_handler_filter::option_definition
+   */
   function option_definition() {
     $options = parent::option_definition();
-    $options['identifier'] = array('default' => 'dist');
-    $options['value'] = array(
-      'default' => array(
-        'latitude' => '',
-        'longitude' => '',
-        'search_distance' => 100,
-        'search_units' => 'kilometers',
-      ),
+    $options['operator'] = array('default' => '<');
+    $options['value']['default'] = array(
+      'latitude' => NULL,
+      'longitude' => NULL,
+      'search_distance' => 100,
+      'search_units' => 'kilometers',
     );
     return $options;
   }
 
+  /**
+   * Display the filter on the administrative summary
+   */
   function admin_summary() {
-    return '';
+    return FALSE;
   }
 
-  function operator_options() {
-    return array(
-      'dist' => t('Proximity (Circular)'),
-    );
-  }
-
+  /**
+   * Shortcut to display the value form.
+   */
   function value_form(&$form, &$form_state) {
-    $form['origin'] = array(
-      '#type' => 'select',
-      '#title' => t('Origin'),
-      '#options' => array(
-        'static' => t('Static  Latitude / Longitude'),
-      ),
-      '#description' => t('This will be the way the latitude/longitude of origin is determined.  If this filter is exposed, this will determine the default values. NOTE: The PHP code, nid argument and uid argument options will not be available when the filter is exposed and the use of map is only available when the filter is exposed.'),
-      '#default_value' => isset($this->options['origin']) ? $this->options['origin'] : 'static',
-    );
-
-    if (!empty($form_state['exposed'])) {
-      $identifier = $this->options['expose']['identifier'];
-      if (!isset($form_state['input'][$identifier])) {
-        // We need to pretend the user already inputted the defaults, because
-        // fapi will malfunction otherwise.
-        $form_state['input'][$identifier] = $this->value;
-      }
-    }
 
     $form['value'] = array(
       '#tree' => TRUE,
@@ -59,92 +51,91 @@ class geolocation_proximity_views_handler_filter_distance extends views_handler_
     $form['value']['latitude'] = array(
       '#type' => 'textfield',
       '#title' => t('Latitude'),
+      '#required' => TRUE,
       '#default_value' => $this->value['latitude'],
       '#weight' => 1,
     );
     $form['value']['longitude'] = array(
       '#type' => 'textfield',
       '#title' => t('Longitude'),
+      '#required' => TRUE,
       '#default_value' => $this->value['longitude'],
       '#weight' => 2,
     );
     $form['value']['search_distance'] = array(
       '#type' => 'textfield',
-      '#title' => t('Max distance') . ' (km)',
+      '#title' => t('Max distance (km)'),
+      '#required' => TRUE,
       '#default_value' => $this->value['search_distance'],
       '#weight' => 3,
     );
   }
 
-  function exposed_form(&$form, &$form_state) {
-    parent::exposed_form($form, $form_state);
-    $key = $this->options['expose']['identifier'];
-    $origin = isset($this->options['origin']) ? $this->options['origin'] : 'static';
-
-    unset($form[$key]['php_code']);
-    unset($form[$key]['nid_arg']);
-    unset($form[$key]['nid_loc_field']);
-    unset($form[$key]['uid_arg']);
-    unset($form['origin']);
+  /**
+   * Validate the options form.
+   */
+  function value_validate($form, &$form_state) {
+    $this->latlng_validate($form['value'], $form_state['values']['options']['value']);
   }
 
+  function exposed_validate(&$form, &$form_state) {
+    $this->latlng_validate($form[$this->options['id']], $form_state['values'][$this->options['id']]);
+  }
+
+  /**
+   * Validate the latitude and longitude values
+   */
+  function latlng_validate(&$elements, &$values) {
+    switch (TRUE) {
+      case !is_numeric($values['latitude']):
+        form_error($elements['latitude'], t('Invalid Latitude. Value must be numeric.'));
+        break;
+
+      case $values['latitude'] > 90:
+      case $values['latitude'] < -90:
+        form_error($elements['latitude'], t('Invalid Latitude. Value must be between 90 and -90.'));
+        break;
+    }
+
+    switch (TRUE) {
+      case !is_numeric($values['longitude']):
+        form_error($elements['longitude'], t('Invalid Longitude. Value must be numeric.'));
+        break;
+
+      case $values['longitude'] > 180:
+      case $values['longitude'] < -180:
+        form_error($elements['longitude'], t('Invalid Longitude. Value must be between 180 and -180.'));
+        break;
+    }
+
+    if (!is_numeric($values['search_distance']) || $values['search_distance'] < 0) {
+      form_error($elements['search_distance'], t('Invalid Distance. Value must be a positive number.'));
+    }
+
+  }
+
+  /**
+   * Add this filter to the query.
+   */
   function query() {
     if (empty($this->value)) {
       return;
     }
 
-    // We need to merge with $this->options['value'] for filter values
-    // and $this->value for exposed filter values.
-    $options = array_merge($this->options, $this->options['value'], $this->value);
-
-    $filter_lat = $options[0]['latitude'];
-    $filter_lng = $options[0]['longitude'];
-    $filter_distance = $options[0]['search_distance'];
-    if (!(is_numeric($filter_lat) && is_numeric($filter_lng) && is_numeric($filter_distance))) {
-      return;
-    }
+    $value = isset($this->value[0]) ? $this->value[0] : $this->value;
 
     $this->ensure_my_table();
+    $table = $this->table_alias;
+    $field_id = str_replace('_distance', '', $this->options['field']);
 
-     // Precalulate some values to speed up the query.
-     //
-     // http://www.codecodex.com/wiki/Calculate_Distance_Between_Two_Points_on_a_Globe#MySQL
-     //
-     // acos(
-     //   cos( radians(45.20327) ) 
-     //   * cos( radians( coord_lat ) ) 
-     //   * cos( radians( 23.7806 ) - radians(coord_long) ) 
-     //   + 
-     //   sin( radians(45.20327) ) 
-     //   * sin( radians(coord_lat) ) 
-     // ) * 6371
-    $filter_lat_cos_rad = cos(deg2rad($filter_lat));
-    $filter_lat_sin_rad = sin(deg2rad($filter_lat));
-    $filter_lng_rad = deg2rad($filter_lng);
+    $distance = $value['search_distance'];
+    $lat_value = $value['latitude'];
+    $lng_value = $value['longitude'];
 
-    // Use precalculated values from Geolocation Field.
-    $field_id = $options['field'];
-    $field_id = str_replace('_distance', '', $field_id);
-    // SIN( radians(lat) )
-    $field_lat_sin_rad = "$this->table_alias.$field_id" . '_lat_sin';
-    // COS( radians(lat) )
-    $field_lat_cos_rad = "$this->table_alias.$field_id" . '_lat_cos';
-    // radians(lng)
-    $field_lng_rad = "$this->table_alias.$field_id" . '_lng_rad';
+    $sql = "acos(cos(radians($lat_value)) * {$table}.{$field_id}_lat_cos * cos({$table}.{$field_id}_lng_rad - radians($lng_value)) + sin(radians($lat_value)) * {$table}.{$field_id}_lat_sin) * 6371";
 
-    // Begin proximity query.
-    $this->query->add_where_expression($this->options['group'], " 
-      (
-        6371 
-        * ACOS( 
-          $filter_lat_cos_rad 
-          * $field_lat_cos_rad 
-          * COS( $filter_lng_rad - $field_lng_rad ) 
-          + 
-          $filter_lat_sin_rad 
-          * $field_lat_sin_rad 
-        )
-      ) < " . $filter_distance);
-    // End proximity query.
+    // We use having to be able to reuse the query on field handlers
+    $this->query->add_field(NULL, $sql, $this->field_alias);
+    $this->query->add_having($this->options['group'], $this->field_alias, $distance, $this->operator);
   }
 }

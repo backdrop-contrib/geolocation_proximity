@@ -7,3 +7,4 @@ dependencies[] = geolocation
 dependencies[] = views
 
 files[] = handlers/geolocation_proximity_views_handler_filter_distance.inc
+files[] = handlers/geolocation_proximity_views_handler_field_distance.inc
