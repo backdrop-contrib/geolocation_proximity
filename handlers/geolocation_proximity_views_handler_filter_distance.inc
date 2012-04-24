@@ -128,14 +128,21 @@ class geolocation_proximity_views_handler_filter_distance extends views_handler_
     $table = $this->table_alias;
     $field_id = str_replace('_distance', '', $this->options['field']);
 
-    $distance = $value['search_distance'];
-    $lat_value = $value['latitude'];
-    $lng_value = $value['longitude'];
+    // Prepare filter values.
+    $filter_distance = $value['search_distance'];
+    $filter_lat = $value['latitude'];
+    $filter_lng = $value['longitude'];
 
-    $sql = "acos(cos(radians($lat_value)) * {$table}.{$field_id}_lat_cos * cos({$table}.{$field_id}_lng_rad - radians($lng_value)) + sin(radians($lat_value)) * {$table}.{$field_id}_lat_sin) * 6371";
+    // Prepare field values.
+    $field_latsin = "{$table}.{$field_id}_lat_sin";
+    $field_latcos = "{$table}.{$field_id}_lat_cos";
+    $field_lng= "{$table}.{$field_id}_lng_rad";
+
+    // Build the query.
+    $sql = _proximity_sql_fragment($filter_lat, $filter_lng, $field_latsin, $field_latcos, $field_lng);
 
     // We use having to be able to reuse the query on field handlers
     $this->query->add_field(NULL, $sql, $this->field_alias);
-    $this->query->add_having($this->options['group'], $this->field_alias, $distance, $this->operator);
+    $this->query->add_having($this->options['group'], $this->field_alias, $filter_distance, $this->operator);
   }
 }

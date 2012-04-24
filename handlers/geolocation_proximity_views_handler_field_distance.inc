@@ -235,10 +235,17 @@ class geolocation_proximity_views_handler_field_distance extends views_handler_f
       $table = $this->table_alias;
       $field_id = $this->geolocation_proximity_field_id;
 
-      $lat_value = $this->options['location']['latitude'];
-      $lng_value = $this->options['location']['longitude'];
+      // Prepare filter values.
+      $filter_lat = $this->options['location']['latitude'];
+      $filter_lng = $this->options['location']['longitude'];
 
-      $sql = "acos(cos(radians($lat_value)) * {$table}.{$field_id}_lat_cos * cos({$table}.{$field_id}_lng_rad - radians($lng_value)) + sin(radians($lat_value)) * {$table}.{$field_id}_lat_sin) * 6371";
+      // Prepare field values.
+      $field_latsin = "{$table}.{$field_id}_lat_sin";
+      $field_latcos = "{$table}.{$field_id}_lat_cos";
+      $field_lng= "{$table}.{$field_id}_lng_rad";
+
+      // Build the query.
+      $sql = _proximity_sql_fragment($filter_lat, $filter_lng, $field_latsin, $field_latcos, $field_lng);
 
       $this->query->add_field(NULL, $sql, $this->field_alias);
     }
