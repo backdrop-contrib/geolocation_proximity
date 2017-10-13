@@ -1,7 +1,8 @@
 name = Geolocation Proximity Filter
 description = Views proximity filter for Geolocation Field.
 package = Geolocation
-core = 7.x
+backdrop = 1.x
+type = module
 
 dependencies[] = geolocation
 dependencies[] = views
