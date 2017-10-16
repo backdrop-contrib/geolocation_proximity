@@ -5,10 +5,26 @@
  */
 
 /**
+ * Add the views .inc file.
+ */
+module_load_include('inc', 'geolocation_proximity', 'views/geolocation_proximity.views');
+
+/**
  * Implements hook_views_api()
  */
 function geolocation_proximity_views_api() {
   return array(
     'api' => 3,
+  );
+}
+
+/**
+ * Implements hook_autoload_info().
+ */
+function geolocation_proximity_autoload_info() {
+  return array(
+    // Views handlers:
+    'geolocation_proximity_views_handler_field_distance' => 'views/geolocation_proximity_views_handler_field_distance.inc',
+    'geolocation_proximity_views_handler_filter_distance' => 'views/geolocation_proximity_views_handler_filter_distance.inc',
   );
 }

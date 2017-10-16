@@ -158,7 +158,7 @@ class geolocation_proximity_views_handler_filter_distance extends views_handler_
         );
 
         // Attach CSS and JS files via FAPI '#attached'.
-        $form['value']['googlemap']['googlemap']['#attached']['css'][] = drupal_get_path('module', 'geolocation_googlemaps') . '/geolocation_googlemaps.css';
+        $form['value']['googlemap']['googlemap']['#attached']['css'][] = backdrop_get_path('module', 'geolocation_googlemaps') . '/geolocation_googlemaps.css';
         $form['value']['googlemap']['googlemap']['#attached']['js'][] = array(
           'data' => '//maps.google.com/maps/api/js?sensor=false',
           'type' => 'external',
@@ -168,13 +168,13 @@ class geolocation_proximity_views_handler_filter_distance extends views_handler_
           'type' => 'external',
         );
         $form['value']['googlemap']['googlemap']['#attached']['js'][] = array(
-          'data' => drupal_get_path('module', 'geolocation_googlemaps') . '/geolocation_googlemaps_widget.js',
+          'data' => backdrop_get_path('module', 'geolocation_googlemaps') . '/geolocation_googlemaps_widget.js',
           'type' => 'file',
           'scope' => 'footer',
         );
 
         // Make defaults available as javascript settings. In JS files use:
-        // Drupal.settings.mapDefaults.lat
+        // Backdrop.settings.mapDefaults.lat
         $map_defaults = array(
           $id => array(
             'lat' => $this->value['latitude'],
