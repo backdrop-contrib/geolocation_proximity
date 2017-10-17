@@ -1,5 +1,5 @@
-Geolocation Proximity with Smart IP
-===================================
+Geolocation Proximity
+=====================
 
 Backdrop CMS port of the Drupal 7 module
 [Geolocation Proximity](https://www.drupal.org/project/geolocation_proximity)
