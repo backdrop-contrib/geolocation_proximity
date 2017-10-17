@@ -1,0 +1,8 @@
+name = Geolocation Proximity with Smart IP
+description = Smart IP integration for Geolocation Proximity Filter.
+package = Geolocation
+backdrop = 1.x
+type = module
+
+dependencies[] = geolocation_proximity
+dependencies[] = smart_ip

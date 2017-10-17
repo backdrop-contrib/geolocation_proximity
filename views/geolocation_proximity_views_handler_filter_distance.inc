@@ -73,6 +73,7 @@ class geolocation_proximity_views_handler_filter_distance extends views_handler_
     if (empty($form_state['exposed']) || (!empty($form_state['exposed']) && $input_type == 'direct_input')) {
       $form['value']['latitude'] = array(
         '#type' => 'textfield',
+        '#prefix' => "Leave the coordinates empty to use visitor's current location",
         '#title' => t('Latitude'),
         '#default_value' => $this->value['latitude'],
       );
@@ -275,8 +276,16 @@ class geolocation_proximity_views_handler_filter_distance extends views_handler_
 
     $value = isset($this->value[0]) ? $this->value[0] : $this->value;
 
+    // If there is no values for the filter use the client location as origin.
     if ($value['latitude'] === "" || $value['longitude'] === "") {
-      return;
+      $client_location = _geolocation_proximity_get_client_location();
+      if (isset($client_location['latitude']) && isset($client_location['longitude'])) {
+        $value['latitude'] = $client_location['latitude'];
+        $value['longitude'] = $client_location['longitude'];
+      }
+      else {
+        return;
+      }
     }
 
     $this->ensure_my_table();

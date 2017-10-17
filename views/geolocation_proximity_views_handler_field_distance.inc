@@ -31,7 +31,7 @@ class geolocation_proximity_views_handler_field_distance extends views_handler_f
   function option_definition() {
     $options = parent::option_definition();
     $options['exposed'] = array(
-      'default' => TRUE,
+      'default' => FALSE,
       'bool' => TRUE,
     );
     $options['expose'] = array(
@@ -78,10 +78,11 @@ class geolocation_proximity_views_handler_field_distance extends views_handler_f
   function extra_options(&$option) {
     $option['use_filter'] = FALSE;
     $option['location'] = array(
-      'latitude' => 0,
-      'longitude' => 0,
+      'latitude' => '',
+      'longitude' => '',
     );
   }
+
   /**
    * Provide a form for setting options.
    */
@@ -99,7 +100,7 @@ class geolocation_proximity_views_handler_field_distance extends views_handler_f
       '#options' => $filters,
       '#title' => t('Use filter'),
       '#default_value' => $this->options['use_filter'],
-      '#description' => t('This field requires a location (latitude, longitude) to use as reference for calculating the distance. If there are filters for this same field, the location set for the given filter can be used. If not one needs to be provided.'),
+      '#description' => t("This field requires a location (latitude, longitude) to use as reference for calculating the distance. If there are filters for this same field, the location set for the given filter can be used. If not one needs to be provided, or leave it empty to use visitor's current location."),
     );
 
     $form['location'] = array(
@@ -117,14 +118,14 @@ class geolocation_proximity_views_handler_field_distance extends views_handler_f
     $form['location']['latitude'] = array(
       '#type' => 'textfield',
       '#title' => t('Latitude'),
-      '#required' => TRUE,
+      '#required' => FALSE,
       '#default_value' => $this->options['location']['latitude'],
       '#weight' => 1,
     );
     $form['location']['longitude'] = array(
       '#type' => 'textfield',
       '#title' => t('Longitude'),
-      '#required' => TRUE,
+      '#required' => FALSE,
       '#default_value' => $this->options['location']['longitude'],
       '#weight' => 2,
     );
@@ -152,14 +153,14 @@ class geolocation_proximity_views_handler_field_distance extends views_handler_f
     $form[$this->field_alias]['latitude'] = array(
       '#type' => 'textfield',
       '#title' => t('Latitude'),
-      '#required' => TRUE,
+      '#required' => FALSE,
       '#default_value' => $this->options['location']['latitude'],
       '#weight' => 1,
     );
     $form[$this->field_alias]['longitude'] = array(
       '#type' => 'textfield',
       '#title' => t('Longitude'),
-      '#required' => TRUE,
+      '#required' => FALSE,
       '#default_value' => $this->options['location']['longitude'],
       '#weight' => 2,
     );
@@ -194,26 +195,31 @@ class geolocation_proximity_views_handler_field_distance extends views_handler_f
    * Validate the latitude and longitude values
    */
   function latlng_validate(&$elements, &$values) {
-    switch (TRUE) {
-      case !is_numeric($values['latitude']):
-        form_error($elements['latitude'], t('Invalid Latitude. Value must be numeric.'));
-        break;
 
-      case $values['latitude'] > 90:
-      case $values['latitude'] < -90:
-        form_error($elements['latitude'], t('Invalid Latitude. Value must be between 90 and -90.'));
-        break;
+    if ($values['latitude'] !== "") {
+      switch (TRUE) {
+        case !is_numeric($values['latitude']):
+          form_error($elements['latitude'], t('Invalid Latitude. Value must be numeric.'));
+          break;
+
+        case $values['latitude'] > 90:
+        case $values['latitude'] < -90:
+          form_error($elements['latitude'], t('Invalid Latitude. Value must be between 90 and -90.'));
+          break;
+      }
     }
 
-    switch (TRUE) {
-      case !is_numeric($values['longitude']):
-        form_error($elements['longitude'], t('Invalid Longitude. Value must be numeric.'));
-        break;
+    if ($values['latitude'] !== "") {
+      switch (TRUE) {
+        case !is_numeric($values['longitude']):
+          form_error($elements['longitude'], t('Invalid Longitude. Value must be numeric.'));
+          break;
 
-      case $values['longitude'] > 180:
-      case $values['longitude'] < -180:
-        form_error($elements['longitude'], t('Invalid Longitude. Value must be between 180 and -180.'));
-        break;
+        case $values['longitude'] > 180:
+        case $values['longitude'] < -180:
+          form_error($elements['longitude'], t('Invalid Longitude. Value must be between 180 and -180.'));
+          break;
+      }
     }
   }
 
@@ -229,6 +235,7 @@ class geolocation_proximity_views_handler_field_distance extends views_handler_f
    */
   function query() {
     if (!$this->options['use_filter']) {
+
       $this->ensure_my_table();
       $this->add_additional_fields();
 
@@ -238,6 +245,18 @@ class geolocation_proximity_views_handler_field_distance extends views_handler_f
       // Prepare filter values.
       $filter_lat = $this->options['location']['latitude'];
       $filter_lng = $this->options['location']['longitude'];
+
+      // If there is no values for the filter use the client location as origin.
+      if ($filter_lat === "" || $filter_lng === "") {
+        $client_location = _geolocation_proximity_get_client_location();
+        if (isset($client_location['latitude']) && isset($client_location['longitude'])) {
+          $filter_lat = $client_location['latitude'];
+          $filter_lng = $client_location['longitude'];
+        }
+        else {
+          return;
+        }
+      }
 
       // Prepare field values.
       $field_latsin = "{$table}.{$field_id}_lat_sin";

@@ -1,0 +1,21 @@
+<?php
+/**
+ * @file
+ * Smart IP integration for Geolocation Proximity Filter.
+ */
+
+
+/**
+ * Implements hook_geolocation_proximity_client_location_alter().
+ *
+ * Set client location based on Smart IP coordinates on session variable.
+ * If Device Geolocation submodule is enabled, it would set the location
+ * based on client device using W3C Geolocation API and Google Geocoding
+ * service.
+ */
+function geolocation_proximity_smart_ip_geolocation_proximity_client_location_alter(&$client_location) {
+  if (isset($_SESSION['smart_ip']['location']['latitude']) && isset($_SESSION['smart_ip']['location']['longitude'])) {
+    $client_location['latitude'] = $_SESSION['smart_ip']['location']['latitude'];
+    $client_location['longitude'] = $_SESSION['smart_ip']['location']['longitude'];
+  }
+}

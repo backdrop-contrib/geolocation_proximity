@@ -28,3 +28,19 @@ function geolocation_proximity_autoload_info() {
     'geolocation_proximity_views_handler_filter_distance' => 'views/geolocation_proximity_views_handler_filter_distance.inc',
   );
 }
+
+/**
+ * Calls a hook to allow modules to set the visitor's current location.
+ */
+function _geolocation_proximity_get_client_location() {
+  $client_location = array(
+    'latitude' => NULL,
+    'longitude' => NULL,
+  );
+
+  // Call hook_geolocation_proximity_client_location_alter() to allow other
+  // modules to alter the client location array: latitude and longitude.
+  backdrop_alter('geolocation_proximity_client_location', $client_location);
+
+  return $client_location;
+}
