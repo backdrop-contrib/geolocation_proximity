@@ -308,5 +308,6 @@ class geolocation_proximity_views_handler_filter_distance extends views_handler_
     // We use having to be able to reuse the query on field handlers
     $this->query->add_field(NULL, $sql, $this->field_alias);
     $this->query->add_having_expression($this->options['group'], '(' . $this->field_alias . ' IS NULL) OR (' . $this->field_alias . $this->operator . $filter_distance . ')');
+    $this->query->add_orderby(NULL, NULL, 'ASC', $this->field_alias);
   }
 }
