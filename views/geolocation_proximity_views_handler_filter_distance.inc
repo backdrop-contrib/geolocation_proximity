@@ -234,34 +234,36 @@ class geolocation_proximity_views_handler_filter_distance extends views_handler_
       $values['longitude'] = $values['googlemap']['lng'];
     }
 
-    if ($values['latitude'] !== "") {
-      switch (TRUE) {
-        case !is_numeric($values['latitude']):
-          form_error($elements['latitude'], t('Invalid Latitude. Value must be numeric.'));
-          break;
+    if (!empty($elements) || TRUE) {
+      if ($values['latitude'] !== "") {
+        switch (TRUE) {
+          case !is_numeric($values['latitude']):
+            form_error($elements['latitude'], t('Invalid Latitude. Value must be numeric.'));
+            break;
 
-        case $values['latitude'] > 90:
-        case $values['latitude'] < -90:
-          form_error($elements['latitude'], t('Invalid Latitude. Value must be between 90 and -90.'));
-          break;
+          case $values['latitude'] > 90:
+          case $values['latitude'] < -90:
+            form_error($elements['latitude'], t('Invalid Latitude. Value must be between 90 and -90.'));
+            break;
+        }
       }
-    }
 
-    if ($values['longitude'] !== "") {
-      switch (TRUE) {
-        case !is_numeric($values['longitude']):
-          form_error($elements['longitude'], t('Invalid Longitude. Value must be numeric.'));
-          break;
+      if ($values['longitude'] !== "") {
+        switch (TRUE) {
+          case !is_numeric($values['longitude']):
+            form_error($elements['longitude'], t('Invalid Longitude. Value must be numeric.'));
+            break;
 
-        case $values['longitude'] > 180:
-        case $values['longitude'] < -180:
-          form_error($elements['longitude'], t('Invalid Longitude. Value must be between 180 and -180.'));
-          break;
+          case $values['longitude'] > 180:
+          case $values['longitude'] < -180:
+            form_error($elements['longitude'], t('Invalid Longitude. Value must be between 180 and -180.'));
+            break;
+        }
       }
-    }
 
-    if (!is_numeric($values['search_distance']) || $values['search_distance'] < 0) {
-      form_error($elements['search_distance'], t('Invalid Distance. Value must be a positive number.'));
+      if (!is_numeric($values['search_distance']) || $values['search_distance'] < 0) {
+        form_error($elements['search_distance'], t('Invalid Distance. Value must be a positive number.'));
+      }
     }
 
   }
